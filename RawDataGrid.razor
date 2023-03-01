@@ -70,7 +70,7 @@ else*@
             </button>
         </div>
         <div>
-            <button @onclick="LoadData" type="button" class="btn btn-outline-secondary" title="Обновить">
+            <button @onclick="InvokeLoadData" type="button" class="btn btn-outline-secondary" title="Обновить">
                 <i class="bi bi-arrow-clockwise"></i>
             </button>
         </div>
@@ -168,13 +168,13 @@ else*@
     public bool DeleteButtonVisible { get; set; } = true;
 
     [Parameter]
-    public string EntityNames { get; set; }
+    public string? EntityNames { get; set; }
 
     //public List<IEntity> Entities { get; set; } = new List<IEntity>();
 
-    private string _searchText;
+    private string? _searchText;
 
-    public string SearchText
+    public string? SearchText
     {
         get
         {
@@ -204,7 +204,7 @@ else*@
     public bool SortingDescending { get; set; } = true;
 
     [Parameter]
-    public EventCallback<LoadDataArgs> LoadDataAction { get; set; }
+    public EventCallback<LoadDataArgs> LoadData { get; set; }
 
     [Parameter]
     public EventCallback<string> OnEntityDelete { get; set; }
@@ -214,12 +214,14 @@ else*@
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadData();
+        //Console.WriteLine($"RawDataGrid.OnInitializedAsync: Start");
+
+        await InvokeLoadData();
     }
 
-    public async Task LoadData()
+    public async Task InvokeLoadData()
     {
-        //Console.WriteLine($"1: {SearchText}");
+        //Console.WriteLine($"RawDataGrid.InvokeLoadData: {LoadData.HasDelegate}");
         Loading = true;
 
         var loadDataArgs = new LoadDataArgs();
@@ -229,7 +231,7 @@ else*@
         loadDataArgs.SortingDescending = SortingDescending;
         loadDataArgs.PageSize = PageSize;
 
-        await LoadDataAction.InvokeAsync(loadDataArgs);
+        await LoadData.InvokeAsync(loadDataArgs);
 
         //CurrentPage = loadDataArgs.CurrentPage;
         TotalPages = (int)Math.Ceiling(EntitiesTotalCount / (decimal)PageSize);
@@ -259,7 +261,7 @@ else*@
 
         await OnEntityDelete.InvokeAsync(entity["Id"]);
 
-        await LoadData();
+        await InvokeLoadData();
     }
 
     public void Create()
@@ -297,38 +299,38 @@ else*@
     {
         if (e.Code == "Enter" || e.Code == "NumpadEnter")
         {
-            await LoadData();
+            await InvokeLoadData();
         }
     }
 
     public async Task ClearSearchText()
     {
         SearchText = "";
-        await LoadData();
+        await InvokeLoadData();
     }
 
     public async Task FirstPageClick()
     {
         CurrentPage = 1;
-        await LoadData();
+        await InvokeLoadData();
     }
 
     public async Task PreviousPageClick()
     {
         CurrentPage--;
-        await LoadData();
+        await InvokeLoadData();
     }
 
     public async Task NextPageClick()
     {
         CurrentPage++;
-        await LoadData();
+        await InvokeLoadData();
     }
 
     public async Task LastPageClick()
     {
         CurrentPage = TotalPages;
-        await LoadData();
+        await InvokeLoadData();
     }
 
     public async Task OnColumnClick(string columnKey)
@@ -352,6 +354,6 @@ else*@
             }
         }
 
-        await LoadData();
+        await InvokeLoadData();
     }
 }

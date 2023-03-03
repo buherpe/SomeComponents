@@ -18,7 +18,7 @@ else*@
     <div class="hstack gap-3">
         @if (CreateButtonVisible)
         {
-            <a class="btn btn-primary" href="@($"/{EntityNames}/0")" role="button">
+            <a class="btn btn-primary" href="@($"{EntitiesLink}/0")" role="button">
                 Создать
             </a>
         }
@@ -115,12 +115,12 @@ else*@
                     <td>
                         @if (ChooseOneEntity)
                         {
-                            <button @onclick="() => ChooseOneEntityClicked(entity)" type="button" class="btn btn-outline-secondary btn-sm">Выбрать</button>
+                            <button @onclick="@(async () => await OnEntityChoose.InvokeAsync(entity["Id"]))" type="button" class="btn btn-outline-secondary btn-sm">Выбрать</button>
                         }
                         else
                         {
-                            <a class="btn btn-outline-secondary btn-sm" href="@($"/{EntityNames}/{entity["Id"]}")" role="button">
-                                <i class="bi bi-search"></i>
+                            <a class="btn btn-outline-secondary btn-sm" href="@($"{EntitiesLink}/{entity["Id"]}")" role="button">
+                            <i class="bi bi-search"></i>
                             </a>
                         }
                     </td>
@@ -168,7 +168,7 @@ else*@
     public bool DeleteButtonVisible { get; set; } = true;
 
     [Parameter]
-    public string? EntityNames { get; set; }
+    public string? EntitiesLink { get; set; }
 
     //public List<IEntity> Entities { get; set; } = new List<IEntity>();
 
@@ -242,14 +242,6 @@ else*@
         //StateHasChanged();
     }
 
-    public async Task ChooseOneEntityClicked(Dictionary<string, string> entity)
-    {
-        //var id = int.Parse(entity["Id"]);
-
-        //BlazoredModal.CloseAsync(ModalResult.Ok(Entities.FirstOrDefault(x => x["Id"] == entity["Id"])));
-        await OnEntityChoose.InvokeAsync(entity["Id"]);
-    }
-
     public async Task TrClickedDelete(Dictionary<string, string> entity)
     {
         var confirmed = await JsRuntime.InvokeAsync<bool>("confirm", "Удалить запись?");
@@ -262,11 +254,6 @@ else*@
         await OnEntityDelete.InvokeAsync(entity["Id"]);
 
         await InvokeLoadData();
-    }
-
-    public void Create()
-    {
-        NavigationManager.NavigateTo($"/{EntityNames}/0");
     }
 
     private Stream GetFileStream()

@@ -7,6 +7,7 @@
 @using SomeComponents;
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JsRuntime;
+@implements IAsyncDisposable
 
 @*@if (Loading)
 {
@@ -120,7 +121,7 @@ else*@
                         else
                         {
                             <a class="btn btn-outline-secondary btn-sm" href="@($"{EntitiesLink}/{entity["Id"]}")" role="button">
-                            <i class="bi bi-search"></i>
+                                <i class="bi bi-search"></i>
                             </a>
                         }
                     </td>
@@ -212,11 +213,22 @@ else*@
     [Parameter]
     public EventCallback<string> OnEntityChoose { get; set; }
 
+    private IJSObjectReference? _jsFunctions;
+
     protected override async Task OnInitializedAsync()
     {
         //Console.WriteLine($"RawDataGrid.OnInitializedAsync: Start");
 
         await InvokeLoadData();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _jsFunctions = await JsRuntime.InvokeAsync<IJSObjectReference>("import",
+                "./_content/SomeComponents/RawDataGrid.razor.js");
+        }
     }
 
     public async Task InvokeLoadData()
@@ -279,7 +291,7 @@ else*@
 
         using var streamRef = new DotNetStreamReference(stream: fileStream);
 
-        await JsRuntime.InvokeVoidAsync("downloadFileFromStream", fileName, streamRef);
+        await _jsFunctions.InvokeVoidAsync("downloadFileFromStream", fileName, streamRef);
     }
 
     public async Task SearchTextInputEnter(KeyboardEventArgs e)
@@ -342,5 +354,20 @@ else*@
         }
 
         await InvokeLoadData();
+    }
+
+    async ValueTask IAsyncDisposable.DisposeAsync()
+    {
+        if (_jsFunctions is not null)
+        {
+            try
+            {
+                await _jsFunctions.DisposeAsync();
+            }
+            catch (JSDisconnectedException)
+            {
+                // If the browser is gone, we don't need it to clean up any browser-side state
+            }
+        }
     }
 }
